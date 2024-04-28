@@ -1,0 +1,116 @@
+**Stereoscopy**
+- Type of machine vision that uses two or more cameras to produce a full-field-of view 3D measurement
+- The extraction of 3D information from 2D images
+	- Compares data from multiple perspectives and combines the relative positions of things in each view
+	- Similar to how eyes work, perceive depth with two different 2D images
+![[Pasted image 20240418215531.png]]
+- Assume relative distance between cameras is known
+![[Pasted image 20240418215647.png]]
+- Depth Map: 
+	- An image channel that contains the data on the separation between the surfaces of scene objects from a viewpoint
+- Epipolar Geometry is the geometry of stereo vision
+	- capturing 3D objects causes loss of depth
+	- The disparity between the two stereo pictures is the apparent motion of things
+	- Objects that are closer to the cameras will be further apart, discrepant
+- The Direction Vector:
+	- A direction vector is a vector in three dimensions emanating from a pixel in the image
+	- The direction from where the light ray arrives at the pixel sensor
+	- The vector contains all the 3D points that could be candidate sources for the 2D pixels in the image
+	- With two different direction vectors from two different cameras, given that they can only intersect at one unique point, the intersection point will be the source
+	- Can then determine the depth of the point by triangulation
+- At the pixel level, use triangulation to identify a point in 3D space from L R pixel points 
+- Use a disparity map for large images with lots of pixel points
+- Triangulation:
+	- Process of identifying a point in 3D space from its projections onto two or more images
+	- Can be quite complex, 
+		- Decompositon into a series of computational stages:
+			- SVD, determining roots of polynomial
+		- Iterative parameter estimation
+			- Mid Point Method, Direct Linear Transformation, Essential Matrix
+- Disparity Map:
+	- The horizontal displacement of a point's projections between the left and the right image. In contrast, depth refers to the depth coordinate of a point located in the real 3D world
+	- Match each pixel in L with its R pixel, calculate the distance between each match, then generate an intensity image called the disparity map
+	- Requires solving the correspondence problem
+		- The matching points will be on the same horizontal line following this transformation, transforming the 2D stereo correspondence problem into a 1D problem
+		- This breaks the 'curse of dimensionality'
+	- The Block Matching Algorithm: 
+		- Fundamental method for identifying related pixels
+		- A comparison between a small window encircling a point in the first image and several small blocks arranged along a single horizontal line in the second image forms the basis for the algorithm
+		- Similarity measures include Sum of Absolute Differences (SAD) and Sum of Squared Differences (SSD)
+		- The discrepancy has an inverse relationship with depth. Triangulate the disparity map, converting it into a depth map using the cameras geometric configuration as input
+
+**SIFT (SCALE INVARIANT FEATURE TRANSFORM)**:
+- A feature extraction method that reduces the image content to a set of points used to detect similar patterns in other images 
+	- Feature Extraction:
+		- Reduce the number of features in the dataset by passing them through a mapping function
+	- Key Points:
+		- An image's key points are spatial locations that are rotation and scale-invariant. These key points highlight what stands out in an image and which pixels are of utmost importance
+	- Descriptors:
+		- Descriptors are vectors that describe the local surroundings around the key points present in the image. These descriptors are used to make associations between different images
+- Advantages:
+	- Features are local, so not as affected by noise and clutter
+	- Features that are obtained are distinct, can be compared with lots of data/objects
+	- Generates many features 
+	- Efficient?
+- 1) Build the Scale Space
+	- Apply gaussian blur on octaves of scaled versions
+	- Take DoG (difference of gaussians)
+- 2) Key Point Localization 
+	- Compare the pixel values with other pixels in their locality
+- 3) Orientation Assignment
+- 4) Key Point Descriptor
+- 5) Key Point Matching
+
+Structure From Motion:
+- motion parallax:
+	- objects move different amounts depending on their distance from the observer
+	- can be used to generate an accurate 3D representation of the world around them
+- similar problem to stereo vision
+- In order to find correspondence between images, you can track features like corner points between the images
+- SURF and SIFT commonly used to find feature points
+- After detecting these features, match them between images. Common matching alg is Lucas-Kanade tracker:
+	- based on the Lucas-Kanade optical flow estimation alg
+	- Estimate the motion of pixels in an image across a sequence of consecutive pictures
+	- This works by looking at the image from a small perspective. When given the gradient of the brightness, when moving the image, you can infer the direction of the movement (only if the brightness cannot change for reasons other than motion).
+	- Basic assumption of LK tracking 
+		- brightness of each pixel does not change with time
+	- If you look at a pixel and know the brightness increases towards bottom left, and you move the camera, and then the brightness increases, then you assume the object moved towards top right / camera moved bottom left
+	- Aperture Problem:
+		- You can only perceive motion in the directions that are not orthogonal (right angle) to the direction of the gradient
+		- Can use a window around a pixel (need to assume all pixels are moving the same
+	- OpenCV finds points using Shi-Tomasi Corner Detector
+- Matches should also be filtered 
+	- RANSAC (random sample consensus) usually used to remove outlier correspondences
+	- Solves location determination problem
+- Feature trajectories are then used to reconstruct their 3D positions and the camera's motion
+
+- Time-Varying Point Cloud:
+	- A 3D point cloud time series
+	- Collection of data points in a 3D coordinate system, where each point represents a spatial measurement on an object's surface
+	- A Dynamic Point Cloud is a set of points irregularly sampled from the continuous surfaces of objects or scenes, comprising texture and geometry
+- Spatial Correlation:
+	- Positive spatial correlation means that nearby values of a variable (shape in space) tend to be similar on a map
+- Active Shape Models:
+	- ASMs represent the shape of an object as sets of landmark points, placed at interesting features
+	- Training set of manually labeled landmark points is required - aligned using Procrustes analysis to remove global scale, rotation, and translations
+	- Principal Component Analysis: 
+		- PCA is applied to the aligned landmarks to capture the main modes of shape variation. The model represents the shape as the mean shape plus a linear combination of the eigenvectors of the covariance matrix
+	- The shape then needs to lie within a certain range of the mean shape, within a few std deviations
+	- Minimize an objective function that measures the difference between the model's predicted landmark positions and the actual image features. Initializes the ASM near the object of interest 
+	- Active Appearance Models / Deformable Part Models related+extensions
+- https://arxiv.org/abs/1411.4280
+- https://arxiv.org/html/2402.03655v1
+- https://ieeexplore.ieee.org/document/854941
+- todo
+- Shape Trajectory Duality
+- Trajectory Space
+- Sidenbladth et al. 2000
+- Discrete Cosine Transform
+- Parsimony
+- Trivariate Optimization
+- Trajectory Reconstruction
+	- Park et al. 2010
+- Degeneracy
+	- Trajectory reconstruction using any linear trajectory basis is impossible if corr(X,C) = +- 1
+	- Smooth motion of a 3D point is sufficient for 3D dynamic reconstruction if the camera motion is not smooth
+- 
